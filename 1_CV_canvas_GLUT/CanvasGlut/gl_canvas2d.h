@@ -44,7 +44,9 @@ public:
     static void clear(float r, float g, float b);
 
     //desenha texto na coordenada (x,y)
-    static void text(float x, float y, const char *t);
+    static void text(float x, float y, const char* t);
+    static void centeredText(float x, float y, const char* t);
+    static void button(float x1, float y1, float x2, float y2, const char* t);
     static void text(float x, float y, const int i);
 
     //coordenada de offset para desenho de objetos.

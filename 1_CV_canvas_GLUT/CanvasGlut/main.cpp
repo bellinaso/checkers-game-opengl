@@ -21,103 +21,139 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <functional>
 
 #include "gl_canvas2d.h"
 
 #include "auxiliar.h" //precisa incluir para ter o prototipo da funcao funcaoDeOutroArquivo().
 
 
-//variaveis globais
-int posQuadradoX = 100;
-int posQuadradoY = 100;
-int screenWidth = 500, screenHeight = 500; //largura e altura inicial da tela. Alteram com o redimensionamento de tela.
-int mouseX, mouseY; //variaveis globais do mouse para poder exibir dentro da render().
+//int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+//int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+//int windowWidth = screenWidth*70/100;
+//int windowHeight = screenHeight*70/100;
+
+int windowWidth = 1000;
+int windowHeight = 800;
+
+int mouseX, mouseY, mouseButton, mouseState, mouseWheel, mouseDirection;
+int pressedKey = NULL;
+
+//bool menu = false;
+bool menu = true;
+
+int boardSize = 8;
 
 
-
-void DrawMouseScreenCoords()
-{
-    char str[100];
-    sprintf(str, "Mouse: (%d,%d)", mouseX, mouseY);
-    CV::text(10,300, str);
-    sprintf(str, "Screen: (%d,%d)", screenWidth, screenHeight);
-    CV::text(10,320, str);
+void quitGame() {
+	exit(0);
+	return;
 }
 
-//funcao chamada continuamente. Deve-se controlar o que desenhar por meio de variaveis
-//globais que podem ser setadas pelo metodo keyboard()
-void render()
-{
-    CV::clear(0,0,0);
 
-    funcaoDeOutroArquivo();
-
-    CV::color(1);
-
-    DrawMouseScreenCoords();
-
-
-    CV::color(2);
-    //desenha o quadrado
-    CV::rect(posQuadradoX, posQuadradoY, posQuadradoX+100, posQuadradoY+100);
-
-    CV::circleFill(mouseX, mouseY, 40, 30);
-
-    CV::color(3);
-    CV::color(1, 0 , 0);
-    CV::text(20,50,   "Programa Demo Canvas."); //imprime texto
-    CV::text(40, 400, 88); //imprime numeros inteiros
+void setBoardSize(int size) {
+	boardSize = size;
+	menu = false;
 }
 
-void MoveQuadrado(int x, int y)
-{
-    posQuadradoX += x;
-    posQuadradoY += y;
+
+void DrawButton(float x1, float y1, float width, const char* t, std::function<void()> callback) {
+	float centerOffset = -(width / 2);
+	x1 += centerOffset;
+	float x2 = x1 + width;
+	float y2 = y1 + 20;
+
+	CV::button(x1, y1, x2, y2, t);
+
+	if (mouseX > x1 && mouseY > y1 &&
+		mouseX < x2 && mouseY < y2 &&
+		mouseButton == 0 &&
+		mouseState == 1
+		) {
+		callback();
+	}
 }
 
-//funcao chamada toda vez que uma tecla for pressionada
+
+void DrawMenu() {
+	if (!menu) {
+		return;
+	}
+
+	CV::color(15);
+	CV::centeredText(windowWidth / 2, windowHeight - 75, "Damas 2d");
+	CV::centeredText(windowWidth / 2, windowHeight - 150, "Menu Principal");
+	CV::centeredText(windowWidth / 2, windowHeight - 300, "Escolha o tamanho do tabuleiro");
+	DrawButton(windowWidth / 2, windowHeight - 350, 200, "Tabuleiro 8x8", []() {setBoardSize(8);});
+	DrawButton(windowWidth / 2, windowHeight - 400, 200, "Tabuleiro 10x10", []() {setBoardSize(10);});
+	DrawButton(windowWidth / 2, windowHeight - 450, 200, "Tabuleiro 12x12", []() {setBoardSize(12);});
+	DrawButton(windowWidth / 2, 100, 120, "Sair [ESC]", []() {quitGame();});
+}
+
+
+void DrawBoard() {
+	if (menu) {
+		return;
+	}
+}
+
+
+void DrawAside() {
+	if (menu) {
+		return;
+	}
+
+	CV::color(15);
+	CV::line(200, windowHeight, 200, 0);
+}
+
+
 void keyboard(int key)
 {
-   printf("\nTecla: %d" , key);
+	pressedKey = key;
+	printf("\nTecla: %d", key);
 
-   switch(key)
-   {
-      case 27: //finaliza programa
-	     exit(0);
-        break;
-
-	  case 201: //seta para cima
-        MoveQuadrado(0, 10);
-        break;
-
-	  case 203: //seta para a baixo
-        MoveQuadrado(0, -10);
-        break;
-
-	  case 202: //seta para direita
-        MoveQuadrado(10, 0);
-        break;
-
-   }
+	switch (key)
+	{
+	case 27:
+		quitGame();
+		break;
+	}
 }
-//funcao chamada toda vez que uma tecla for liberada
+
+
 void keyboardUp(int key)
 {
-   printf("\nLiberou tecla: %d" , key);
+	pressedKey = NULL;
+	printf("\nLiberou tecla: %d", key);
 }
 
 
-//funcao para tratamento de mouse: cliques, movimentos e arrastos
 void mouse(int button, int state, int wheel, int direction, int x, int y)
 {
-   printf("\nmouse %d %d %d %d %d %d", button, state, wheel, direction,  x, y);
+	printf("\nmouse %d %d %d %d %d %d", button, state, wheel, direction, x, y);
 
-   mouseX = x; //guarda as coordenadas do mouse para exibir dentro da render()
-   mouseY = y;
+	mouseX = x;
+	mouseY = y;
+	mouseButton = button;
+	mouseState = state;
+	mouseWheel = wheel;
+	mouseDirection = direction;
+}
+
+
+void render()
+{
+	CV::clear(0.957, 0.945, 0.918);
+
+	DrawMenu();
+	DrawBoard();
+	DrawAside();
 }
 
 int main(void)
 {
-   CV::init(&screenWidth, &screenHeight, "Trabalho do Pozzer: Canvas 2D - Use as setas");
-   CV::run();
+	CV::init(&windowWidth, &windowHeight, "`Damas 2D");
+	CV::run();
 }
