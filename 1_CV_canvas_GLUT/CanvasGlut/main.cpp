@@ -47,6 +47,10 @@ int boardSize = 8;
 
 
 void quitGame() {
+	if (!menu) {
+		menu = true;
+		return;
+	}
 	exit(0);
 	return;
 }
@@ -58,7 +62,7 @@ void setBoardSize(int size) {
 }
 
 
-void DrawButton(float x1, float y1, float width, const char* t, std::function<void()> callback) {
+void DrawButton(float x1, float y1, float width, const char* t, int activationKey, std::function<void()> callback) {
 	float centerOffset = -(width / 2);
 	x1 += centerOffset;
 	float x2 = x1 + width;
@@ -66,12 +70,15 @@ void DrawButton(float x1, float y1, float width, const char* t, std::function<vo
 
 	CV::button(x1, y1, x2, y2, t);
 
-	if (mouseX > x1 && mouseY > y1 &&
+	if ((mouseX > x1 && mouseY > y1 &&
 		mouseX < x2 && mouseY < y2 &&
 		mouseButton == 0 &&
-		mouseState == 1
+		(mouseState == 0 ||
+		mouseState == 1)) ||
+		(pressedKey == activationKey)
 		) {
 		callback();
+		pressedKey = NULL; // Evitar doubleclicks
 	}
 }
 
@@ -85,10 +92,10 @@ void DrawMenu() {
 	CV::centeredText(windowWidth / 2, windowHeight - 75, "Damas 2d");
 	CV::centeredText(windowWidth / 2, windowHeight - 150, "Menu Principal");
 	CV::centeredText(windowWidth / 2, windowHeight - 300, "Escolha o tamanho do tabuleiro");
-	DrawButton(windowWidth / 2, windowHeight - 350, 200, "Tabuleiro 8x8", []() {setBoardSize(8);});
-	DrawButton(windowWidth / 2, windowHeight - 400, 200, "Tabuleiro 10x10", []() {setBoardSize(10);});
-	DrawButton(windowWidth / 2, windowHeight - 450, 200, "Tabuleiro 12x12", []() {setBoardSize(12);});
-	DrawButton(windowWidth / 2, 100, 120, "Sair [ESC]", []() {quitGame();});
+	DrawButton(windowWidth / 2, windowHeight - 350, 200, "Tabuleiro 8x8 [1]", 49, []() {setBoardSize(8);});
+	DrawButton(windowWidth / 2, windowHeight - 400, 200, "Tabuleiro 10x10 [2]", 50, []() {setBoardSize(10);});
+	DrawButton(windowWidth / 2, windowHeight - 450, 200, "Tabuleiro 12x12 [3]", 51, []() {setBoardSize(12);});
+	DrawButton(windowWidth / 2, 100, 120, "Sair [ESC]", 27, []() {quitGame();});
 }
 
 
@@ -96,6 +103,8 @@ void DrawBoard() {
 	if (menu) {
 		return;
 	}
+
+	CV::color(16);
 }
 
 
@@ -106,6 +115,9 @@ void DrawAside() {
 
 	CV::color(15);
 	CV::line(200, windowHeight, 200, 0);
+	CV::centeredText(100, windowHeight - 40, "Damas 2D");
+	CV::centeredText(100, windowHeight - 70, "Tabuleiro");
+	DrawButton(100, 100, 140, "Voltar [ESC]", 27, []() {quitGame();});
 }
 
 
@@ -113,13 +125,6 @@ void keyboard(int key)
 {
 	pressedKey = key;
 	printf("\nTecla: %d", key);
-
-	switch (key)
-	{
-	case 27:
-		quitGame();
-		break;
-	}
 }
 
 
