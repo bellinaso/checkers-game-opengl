@@ -37,13 +37,15 @@
 int windowWidth = 1000;
 int windowHeight = 800;
 
+int asideWidth = (windowWidth - windowHeight);
+
 int mouseX, mouseY, mouseButton, mouseState, mouseWheel, mouseDirection;
 int pressedKey = NULL;
 
 //bool menu = false;
 bool menu = true;
 
-int boardSize = 8;
+int boardPieces = 8;
 
 
 void quitGame() {
@@ -56,9 +58,11 @@ void quitGame() {
 }
 
 
-void setBoardSize(int size) {
-	boardSize = size;
+void setBoardPieces(int pieces) {
+	boardPieces = pieces;
 	menu = false;
+
+
 }
 
 
@@ -70,13 +74,18 @@ void DrawButton(float x1, float y1, float width, const char* t, int activationKe
 
 	CV::button(x1, y1, x2, y2, t);
 
-	if ((mouseX > x1 && mouseY > y1 &&
-		mouseX < x2 && mouseY < y2 &&
-		mouseButton == 0 &&
-		(mouseState == 0 ||
-		mouseState == 1)) ||
-		(pressedKey == activationKey)
-		) {
+	if (
+		(
+			mouseX > x1 && mouseY > y1 &&
+			mouseX < x2 && mouseY < y2 &&
+			mouseButton == 0 &&
+			(mouseState == 0 ||
+			mouseState == 1)
+		) ||
+		(
+			pressedKey == activationKey
+		)
+	) {
 		callback();
 		pressedKey = NULL; // Evitar doubleclicks
 	}
@@ -92,9 +101,9 @@ void DrawMenu() {
 	CV::centeredText(windowWidth / 2, windowHeight - 75, "Damas 2d");
 	CV::centeredText(windowWidth / 2, windowHeight - 150, "Menu Principal");
 	CV::centeredText(windowWidth / 2, windowHeight - 300, "Escolha o tamanho do tabuleiro");
-	DrawButton(windowWidth / 2, windowHeight - 350, 200, "Tabuleiro 8x8 [1]", 49, []() {setBoardSize(8);});
-	DrawButton(windowWidth / 2, windowHeight - 400, 200, "Tabuleiro 10x10 [2]", 50, []() {setBoardSize(10);});
-	DrawButton(windowWidth / 2, windowHeight - 450, 200, "Tabuleiro 12x12 [3]", 51, []() {setBoardSize(12);});
+	DrawButton(windowWidth / 2, windowHeight - 350, 200, "Tabuleiro 8x8 [1]", 49, []() {setBoardPieces(8);});
+	DrawButton(windowWidth / 2, windowHeight - 400, 200, "Tabuleiro 10x10 [2]", 50, []() {setBoardPieces(10);});
+	DrawButton(windowWidth / 2, windowHeight - 450, 200, "Tabuleiro 12x12 [3]", 51, []() {setBoardPieces(12);});
 	DrawButton(windowWidth / 2, 100, 120, "Sair [ESC]", 27, []() {quitGame();});
 }
 
@@ -104,7 +113,40 @@ void DrawBoard() {
 		return;
 	}
 
-	CV::color(16);
+	int boardSpace = (windowWidth - asideWidth);
+
+	int smallerAxisSize = boardSpace >= windowHeight ? windowHeight : boardSpace;
+
+	int boardSize = (smallerAxisSize * 75 / 100);
+
+	int pieceSize = boardSize / boardPieces;
+
+	int x1 = (asideWidth + ((boardSpace - boardSize) / 2));
+	int x2 = (x1 + boardSize);
+	int y1 = (windowHeight / 2 - ((x2 - x1) / 2));
+	int y2 = (y1 + boardSize);
+
+	int pieceY = y1;
+	for (int i = 0; i < boardPieces; i++) {
+		int pieceX = x1;
+		for (int j = 0; j < boardPieces; j++) {
+			if (
+				(i % 2 == 0 && j % 2 == 0) ||
+				(i % 2 != 0 && j % 2 != 0)
+			) {
+				CV::color(16);
+			}
+			else {
+				CV::color(17);
+			}
+			CV::rectFill(pieceX, pieceY, (pieceX + pieceSize), (pieceY + pieceSize));
+			pieceX += pieceSize;
+		}
+		pieceY += pieceSize;
+	}
+
+	//CV::color(16);
+	//CV::rectFill(x1, y1, x2, y2);
 }
 
 
@@ -114,10 +156,10 @@ void DrawAside() {
 	}
 
 	CV::color(15);
-	CV::line(200, windowHeight, 200, 0);
+	CV::line(asideWidth, windowHeight, asideWidth, 0);
 	CV::centeredText(100, windowHeight - 40, "Damas 2D");
 	CV::centeredText(100, windowHeight - 70, "Tabuleiro");
-	DrawButton(100, 100, 140, "Voltar [ESC]", 27, []() {quitGame();});
+	DrawButton((asideWidth / 2), 100, 140, "Menu [ESC]", 27, []() {quitGame();});
 }
 
 
@@ -153,8 +195,8 @@ void render()
 	CV::clear(0.957, 0.945, 0.918);
 
 	DrawMenu();
-	DrawBoard();
 	DrawAside();
+	DrawBoard();
 }
 
 int main(void)
