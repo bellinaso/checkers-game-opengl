@@ -47,6 +47,10 @@ bool menu = true;
 
 int boardPieces = 8;
 
+int** player1pieces = NULL;
+int** player2pieces = NULL;
+int** selectionPiece = NULL;
+
 
 void quitGame() {
 	if (!menu) {
@@ -62,7 +66,57 @@ void setBoardPieces(int pieces) {
 	boardPieces = pieces;
 	menu = false;
 
+	player1pieces = (int**)malloc(boardPieces * sizeof(int*));
+	player2pieces = (int**)malloc(boardPieces * sizeof(int*));
+	selectionPiece = (int**)malloc(boardPieces * sizeof(int*));
 
+	for (int i = 0; i < boardPieces; i++) {
+		player1pieces[i] = (int*)malloc(boardPieces * sizeof(int));
+		player2pieces[i] = (int*)malloc(boardPieces * sizeof(int));
+		selectionPiece[i] = (int*)malloc(boardPieces * sizeof(int));
+	}
+
+	for (int i = 0; i < boardPieces; i++) {
+		for (int j = 0; j < boardPieces; j++) {
+			player1pieces[i][j] = 0;
+			player2pieces[i][j] = 0;
+			selectionPiece[i][j] = 0;
+
+			if ((i + j) % 2 == 0) {
+				if (i < 3) {
+					player2pieces[i][j] = 1;
+				}
+
+				else if (i >= boardPieces - 3) {
+					player1pieces[i][j] = 1;
+				}
+			}
+		}
+	}
+
+	selectionPiece[0][0] = 1;
+}
+
+
+bool mouseIn(float x1, float y1, float x2, float y2) {
+	if (
+		mouseX > x1 && mouseX < x2 &&
+		mouseY > y1 && mouseY < y2
+		) {
+		return true;
+	}
+	return false;
+}
+
+
+void moveSelectionPiece(int x, int y) {
+	for (int i = 0; i < boardPieces; i++) {
+		for (int j = 0; j < boardPieces; j++) {
+			selectionPiece[i][j] = 0;
+		}
+	}
+
+	selectionPiece[x][y] = 1;
 }
 
 
@@ -76,16 +130,15 @@ void DrawButton(float x1, float y1, float width, const char* t, int activationKe
 
 	if (
 		(
-			mouseX > x1 && mouseY > y1 &&
-			mouseX < x2 && mouseY < y2 &&
+			mouseIn(x1, y1, x2, y2) &&
 			mouseButton == 0 &&
 			(mouseState == 0 ||
-			mouseState == 1)
-		) ||
+				mouseState == 1)
+			) ||
 		(
 			pressedKey == activationKey
-		)
-	) {
+			)
+		) {
 		callback();
 		pressedKey = NULL; // Evitar doubleclicks
 	}
@@ -127,26 +180,68 @@ void DrawBoard() {
 	int y2 = (y1 + boardSize);
 
 	int pieceY = y1;
+
 	for (int i = 0; i < boardPieces; i++) {
+
 		int pieceX = x1;
 		for (int j = 0; j < boardPieces; j++) {
-			if (
-				(i % 2 == 0 && j % 2 == 0) ||
-				(i % 2 != 0 && j % 2 != 0)
-			) {
-				CV::color(16);
+
+			if (selectionPiece[i][j] != 1) {
+				if ((i + j) % 2 == 0) {
+					CV::color(16);
+				}
+				else {
+					CV::color(17);
+				}
 			}
 			else {
-				CV::color(17);
+				CV::color(20);
+
+				if (pressedKey) {
+					switch (pressedKey) {
+						case 119: case 201: // up
+							if (i + 1 < boardPieces) {
+								moveSelectionPiece(i + 1, j);
+							}
+							break;
+						case 97: case 200: // left
+							if (j - 1 < boardPieces && j - 1 >= 0) {
+								moveSelectionPiece(i, j - 1);
+							}
+							break;
+						case 100: case 202: // right
+							if (j + 1 < boardPieces) {
+								moveSelectionPiece(i, j + 1);
+							}
+							break;
+						case 115: case 203: // down
+							if (i - 1 < boardPieces && i - 1 >= 0) {
+								moveSelectionPiece(i - 1, j);
+							}
+							break;
+					}
+					pressedKey = NULL;
+				}
+
 			}
 			CV::rectFill(pieceX, pieceY, (pieceX + pieceSize), (pieceY + pieceSize));
+
+			if (mouseIn(pieceX, pieceY, (pieceX + pieceSize), (pieceY + pieceSize))) {
+				moveSelectionPiece(i, j);
+			}
+
+			if (player1pieces[i][j] == 1) {
+				CV::color(18);
+				CV::circleFill((pieceX + (pieceSize / 2)), (pieceY + (pieceSize / 2)), (pieceSize / 2), 360);
+			}
+			else if (player2pieces[i][j] == 1) {
+				CV::color(19);
+				CV::circleFill((pieceX + (pieceSize / 2)), (pieceY + (pieceSize / 2)), (pieceSize / 2), 360);
+			}
 			pieceX += pieceSize;
 		}
 		pieceY += pieceSize;
 	}
-
-	//CV::color(16);
-	//CV::rectFill(x1, y1, x2, y2);
 }
 
 
